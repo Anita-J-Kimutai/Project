@@ -1,0 +1,63 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="vMiT9suOvb0ixHbn0TEW">
+    <mxGraphModel dx="911" dy="531" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="0z5eOQPuWOonumBPcNVx-38" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="400" width="720" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-1" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Traffic Generation:&lt;div&gt;eMBB: poison&amp;nbsp;λ=50&lt;/div&gt;&lt;div&gt;mMTC: Poison&amp;nbsp;λ=80&lt;/div&gt;&lt;div&gt;URLLC: Poison&amp;nbsp;λ=10&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Based on the 3GPP TR 36.814&lt;/div&gt;" vertex="1">
+          <mxGeometry height="110" width="200" x="240" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-14" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="0z5eOQPuWOonumBPcNVx-1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-2" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Input : Action (a)" vertex="1">
+          <mxGeometry height="60" width="120" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-3" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Output: state observation (s)&lt;div&gt;&lt;p class=&quot;MsoNormal&quot; style=&quot;text-align:justify&quot;&gt;&lt;b&gt;&lt;i&gt;&lt;span style=&quot;font-family:&lt;br/&gt;&amp;quot;Times New Roman&amp;quot;,serif&quot;&gt;s = [queue_mMTC, latency_URLLC, throughput_eMBB,&lt;br/&gt;energy, timestep]&lt;/span&gt;&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="520" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-4" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="Output: reward signal&lt;div&gt;Drives policy updates&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="600" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-5" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="Reward calculation:&lt;div&gt;&lt;b style=&quot;text-align: justify; background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;span style=&quot;font-family:&amp;quot;Times New Roman&amp;quot;,serif&quot;&gt;r = w₁ × (throughput_eMBB) − w₂ × (packet_loss_mMTC) − w₃ × (latency_URLLC) − w₄&lt;/span&gt;&lt;/b&gt;&lt;div&gt;&lt;p class=&quot;MsoNormal&quot; style=&quot;text-align:justify&quot;&gt;&lt;b&gt;&lt;span style=&quot;font-family:&amp;quot;Times New Roman&amp;quot;,serif&quot;&gt;× (energy)&lt;/span&gt;&lt;/b&gt;&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="720" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-6" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Slice state update:&lt;div&gt;mMTC queue update&lt;br&gt;&lt;div&gt;eMBB throughput&lt;/div&gt;&lt;div&gt;URLLC latency&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="80" width="160" x="560" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-8" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.346;entryY=-0.008;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-32" connectable="0" parent="0z5eOQPuWOonumBPcNVx-8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Next state observation" vertex="1">
+          <mxGeometry relative="1" x="0.0487" y="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-10" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="0z5eOQPuWOonumBPcNVx-4">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="659.5" y="250" as="sourcePoint" />
+            <mxPoint x="659.5" y="309" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-12" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.889;entryY=0.022;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-28" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="update metrics" vertex="1">
+          <mxGeometry height="30" width="80" x="620" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-31" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="decode PRB allocation" vertex="1">
+          <mxGeometry height="30" width="60" x="160" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-33" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Reward computation" vertex="1">
+          <mxGeometry height="30" width="60" x="650" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-37" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.018;entryY=0.654;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-6" value="&#xa;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(236, 236, 236); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Traffic demand generated&lt;/span&gt;&#xa;&#xa;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
