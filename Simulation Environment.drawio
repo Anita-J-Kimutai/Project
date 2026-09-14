@@ -4,10 +4,13 @@
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="0z5eOQPuWOonumBPcNVx-38" connectable="0" parent="1" style="group" value="" vertex="1">
-          <mxGeometry height="400" width="720" y="80" as="geometry" />
+        <mxCell id="pTpJ8golGALcxsyvZ5XJ-2" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="500" width="720" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="0z5eOQPuWOonumBPcNVx-1" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Traffic Generation:&lt;div&gt;eMBB: poison&amp;nbsp;λ=50&lt;/div&gt;&lt;div&gt;mMTC: Poison&amp;nbsp;λ=80&lt;/div&gt;&lt;div&gt;URLLC: Poison&amp;nbsp;λ=10&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Based on the 3GPP TR 36.814&lt;/div&gt;" vertex="1">
+        <mxCell id="0z5eOQPuWOonumBPcNVx-38" connectable="0" parent="pTpJ8golGALcxsyvZ5XJ-2" style="group" value="" vertex="1">
+          <mxGeometry height="400" width="720" as="geometry" />
+        </mxCell>
+        <mxCell id="0z5eOQPuWOonumBPcNVx-1" parent="0z5eOQPuWOonumBPcNVx-38" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Traffic Generation:&lt;div&gt;eMBB: poisson&amp;nbsp;λ=50&lt;/div&gt;&lt;div&gt;mMTC: Poisson&amp;nbsp;λ=80&lt;/div&gt;&lt;div&gt;URLLC: Poisson&amp;nbsp;λ=10&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Based on the 3GPP TR 36.814&lt;/div&gt;" vertex="1">
           <mxGeometry height="110" width="200" x="240" as="geometry" />
         </mxCell>
         <mxCell id="0z5eOQPuWOonumBPcNVx-14" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="0z5eOQPuWOonumBPcNVx-1">
@@ -45,7 +48,7 @@
         <mxCell id="0z5eOQPuWOonumBPcNVx-12" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.889;entryY=0.022;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="0z5eOQPuWOonumBPcNVx-28" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="update metrics" vertex="1">
+        <mxCell id="0z5eOQPuWOonumBPcNVx-28" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="updated metrics" vertex="1">
           <mxGeometry height="30" width="80" x="620" y="110" as="geometry" />
         </mxCell>
         <mxCell id="0z5eOQPuWOonumBPcNVx-31" parent="0z5eOQPuWOonumBPcNVx-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="decode PRB allocation" vertex="1">
@@ -56,6 +59,9 @@
         </mxCell>
         <mxCell id="0z5eOQPuWOonumBPcNVx-37" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.018;entryY=0.654;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-6" value="&#xa;&lt;span style=&quot;color: rgb(0, 0, 0); font-family: Helvetica; font-size: 12px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: center; text-indent: 0px; text-transform: none; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; white-space: normal; background-color: rgb(236, 236, 236); text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial; display: inline !important; float: none;&quot;&gt;Traffic demand generated&lt;/span&gt;&#xa;&#xa;">
           <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pTpJ8golGALcxsyvZ5XJ-1" parent="pTpJ8golGALcxsyvZ5XJ-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&#xa;&lt;strong&gt;Episode structure&lt;/strong&gt;&lt;br&gt;&#xa;T = 200 time steps per episode · 500,000 total training steps&#xa;&#xa;" vertex="1">
+          <mxGeometry height="60" width="720" y="440" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
