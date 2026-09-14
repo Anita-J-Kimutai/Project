@@ -19,7 +19,7 @@
         <mxCell id="Mb0gTzr3frnh9Ke8F6ud-3" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 2: Scheduler comparison" vertex="1">
           <mxGeometry height="60" width="200" x="440" y="240" as="geometry" />
         </mxCell>
-        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-4" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 1:Training reward curve" vertex="1">
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-4" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 1: Training reward curve" vertex="1">
           <mxGeometry height="60" width="210" y="240" as="geometry" />
         </mxCell>
         <mxCell id="Mb0gTzr3frnh9Ke8F6ud-5" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
