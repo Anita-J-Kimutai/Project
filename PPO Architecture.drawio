@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="GzCJ_w4oComzyoe18o3k">
-    <mxGraphModel dx="1032" dy="601" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="815" dy="475" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -16,7 +16,7 @@
         <mxCell id="I-fWhc4O0X3y6Ab_2LQb-2" parent="I-fWhc4O0X3y6Ab_2LQb-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Hidden layer 1&lt;div&gt;64 units, ReLU&lt;/div&gt;" vertex="1">
           <mxGeometry height="40" width="90" x="230" as="geometry" />
         </mxCell>
-        <mxCell id="I-fWhc4O0X3y6Ab_2LQb-5" parent="I-fWhc4O0X3y6Ab_2LQb-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Hidden layer 1&lt;div&gt;64 units, ReLU&lt;/div&gt;" vertex="1">
+        <mxCell id="I-fWhc4O0X3y6Ab_2LQb-5" parent="I-fWhc4O0X3y6Ab_2LQb-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Hidden layer 2&lt;div&gt;64 units, ReLU&lt;/div&gt;" vertex="1">
           <mxGeometry height="40" width="90" x="390" as="geometry" />
         </mxCell>
         <mxCell id="I-fWhc4O0X3y6Ab_2LQb-6" parent="I-fWhc4O0X3y6Ab_2LQb-38" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="Output layer (10) actions" vertex="1">
@@ -281,6 +281,9 @@
             <mxPoint x="300" y="160" as="sourcePoint" />
             <mxPoint x="545" y="420" as="targetPoint" />
           </mxGeometry>
+        </mxCell>
+        <mxCell id="doYNUMLAZ10f_VZ8qTzL-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="&lt;br&gt;&lt;strong&gt;Training: stochastic sampling · Evaluation: deterministic&amp;nbsp;&lt;/strong&gt;&lt;br&gt;&lt;br&gt;&lt;strong&gt;Optimiser: Adam · Learning rate: 3e-4 · Batch size: 64&lt;/strong&gt;&lt;div&gt;&lt;br/&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="720" x="50" y="750" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
