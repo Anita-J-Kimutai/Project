@@ -34,7 +34,7 @@
         <mxCell id="0z5eOQPuWOonumBPcNVx-8" edge="1" parent="0z5eOQPuWOonumBPcNVx-38" source="0z5eOQPuWOonumBPcNVx-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.346;entryY=-0.008;entryDx=0;entryDy=0;entryPerimeter=0;" target="0z5eOQPuWOonumBPcNVx-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="0z5eOQPuWOonumBPcNVx-32" connectable="0" parent="0z5eOQPuWOonumBPcNVx-8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Next state observation" vertex="1">
+        <mxCell id="0z5eOQPuWOonumBPcNVx-32" connectable="0" parent="0z5eOQPuWOonumBPcNVx-8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="output returned to PPO at each time step" vertex="1">
           <mxGeometry relative="1" x="0.0487" y="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
