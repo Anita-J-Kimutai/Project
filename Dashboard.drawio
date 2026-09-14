@@ -1,9 +1,39 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Page-1" id="NisN23rkgIlcoSZRKpSy">
-    <mxGraphModel>
+    <mxGraphModel dx="774" dy="451" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-10" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="460" width="640" x="80" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-1" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 4: Summary statistics table" vertex="1">
+          <mxGeometry height="60" width="200" x="440" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-2" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 3: PRB Allocation Heatmap" vertex="1">
+          <mxGeometry height="60" width="210" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-3" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 2: Scheduler comparison" vertex="1">
+          <mxGeometry height="60" width="200" x="440" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-4" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Panel 1:Training reward curve" vertex="1">
+          <mxGeometry height="60" width="210" y="240" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-5" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
+          <mxGeometry height="80" width="640" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-6" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Update dashboard" vertex="1">
+          <mxGeometry height="60" width="120" x="510" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-7" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Traffic scenario" vertex="1">
+          <mxGeometry height="60" width="120" x="285" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-8" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Scheduler" vertex="1">
+          <mxGeometry height="60" width="120" x="10" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-9" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="RL Scheduler perfomance dashboard" vertex="1">
+          <mxGeometry height="60" width="640" as="geometry" />
+        </mxCell>
       </root>
     </mxGraphModel>
   </diagram>
