@@ -25,10 +25,10 @@
         <mxCell id="Mb0gTzr3frnh9Ke8F6ud-6" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Update dashboard" vertex="1">
           <mxGeometry height="60" width="120" x="510" y="130" as="geometry" />
         </mxCell>
-        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-7" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Traffic scenario" vertex="1">
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-7" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Traffic scenario: [▼]" vertex="1">
           <mxGeometry height="60" width="120" x="285" y="130" as="geometry" />
         </mxCell>
-        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-8" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Scheduler" vertex="1">
+        <mxCell id="Mb0gTzr3frnh9Ke8F6ud-8" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;" value="Scheduler: [▼]" vertex="1">
           <mxGeometry height="60" width="120" x="10" y="130" as="geometry" />
         </mxCell>
         <mxCell id="Mb0gTzr3frnh9Ke8F6ud-9" parent="Mb0gTzr3frnh9Ke8F6ud-10" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="RL Scheduler perfomance dashboard" vertex="1">
