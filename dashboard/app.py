@@ -3,13 +3,7 @@ REINFORCEMENT LEARNING-BASED QUALITY OF SERVICE-AWARE
 RESOURCE SCHEDULING IN 5G NETWORK SLICING
 
 PLOTLY DASH PERFORMANCE DASHBOARD
-============================================================
-MSc Computer Science Project
-Author    : Anita Jebet Kimutai
-Supervisor: Dr Callum Altham
-University: The University of Law
-Date      : September 2026
-------------------------------------------------------------
+
 File: app.py
 Description:
     Interactive Plotly Dash dashboard visualising the
@@ -26,7 +20,7 @@ Description:
     Data source: ./results/evaluation_results.csv
     Run with  : python dashboard/app.py
     Access at : http://127.0.0.1:8050
-============================================================
+
 """
 
 import os
@@ -37,7 +31,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 
-# ── Add project root to path ──────────────────────────────
+# Add project root to path 
 sys.path.append(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))))
 
@@ -46,24 +40,24 @@ from dash import dcc, html, dash_table
 from dash.dependencies import Input, Output
 
 
-# ══ CONFIGURATION ══════════════════════════════════════════
+# CONFIGURATION 
 
 RESULTS_PATH  = "./results/evaluation_results.csv"
 PPO_LOG_PATH  = "./results/ppo_logs/"
 
-# ── Colour scheme — consistent throughout ─────────────────
+# Colour scheme maintained throughoght
 COLOURS = {
-    "PPO"               : "#1F4E79",   # Dark blue
-    "Round Robin"       : "#BA7517",   # Orange
-    "Proportional Fair" : "#1E6B3C",   # Green
-    "Max-Throughput"    : "#8B0000",   # Dark red
-    "eMBB"              : "#2E75B6",   # Mid blue
-    "URLLC"             : "#E67E22",   # Orange
-    "mMTC"              : "#27AE60",   # Green
-    "background"        : "#0D1117",   # Dark background
-    "card"              : "#161B22",   # Card background
-    "text"              : "#E6EDF3",   # Light text
-    "border"            : "#30363D",   # Border colour
+    "PPO"               : "#1F4E79",   
+    "Round Robin"       : "#BA7517",   
+    "Proportional Fair" : "#1E6B3C",  
+    "Max-Throughput"    : "#8B0000",   
+    "eMBB"              : "#2E75B6",   
+    "URLLC"             : "#E67E22",   
+    "mMTC"              : "#27AE60",   
+    "background"        : "#0D1117",   
+    "card"              : "#161B22",   
+    "text"              : "#E6EDF3",   
+    "border"            : "#30363D",   
 }
 
 SCHEDULERS = [
@@ -85,10 +79,10 @@ METRICS = {
 }
 
 
-# ══ LOAD DATA ══════════════════════════════════════════════
+# LOAD DATA
 
 def load_results():
-    """Load evaluation results from CSV."""
+    #Load evaluation results from CSV file
     if not os.path.exists(RESULTS_PATH):
         print(f"⚠️  Results file not found: {RESULTS_PATH}")
         return pd.DataFrame()
@@ -99,8 +93,8 @@ def load_results():
 
 def load_training_curve():
     """
-    Load PPO training reward curve from monitor logs.
-    Returns episode numbers and mean rewards.
+    Load PPO training reward curve from monitor logs
+    Returns episode numbers and mean rewards
     """
     monitor_files = []
     if os.path.exists(PPO_LOG_PATH):
@@ -122,6 +116,7 @@ def load_training_curve():
         df = pd.read_csv(monitor_files[0], skiprows=1)
         df.columns = ["reward", "length", "time"]
         episodes = list(range(1, len(df) + 1))
+
         # Smooth with rolling average
         rewards = df["reward"].rolling(
             window=10, min_periods=1).mean().tolist()
@@ -134,10 +129,10 @@ def load_training_curve():
         return episodes, rewards
 
 
-# ══ CHART BUILDERS ═════════════════════════════════════════
+# CHART BUILDERS
 
 def build_training_curve():
-    """Build training reward curve line chart."""
+    #Build training reward curve line chart
     episodes, rewards = load_training_curve()
 
     fig = go.Figure()
@@ -158,7 +153,7 @@ def build_training_curve():
         paper_bgcolor= COLOURS["card"],
         plot_bgcolor = COLOURS["background"],
         font         = dict(color=COLOURS["text"]),
-        margin       = dict(l=50, r=20, t=50, b=40),
+        margin       = dict(l=50, r=20, t=80, b=40),
         showlegend   = False,
     )
     fig.update_xaxes(gridcolor=COLOURS["border"])
@@ -167,7 +162,7 @@ def build_training_curve():
 
 
 def build_comparison_chart(df, scenario, metric):
-    """Build grouped bar chart comparing all schedulers."""
+    #Build grouped bar chart comparing all schedulers.
     if df.empty:
         return go.Figure()
 
@@ -203,20 +198,22 @@ def build_comparison_chart(df, scenario, metric):
         paper_bgcolor= COLOURS["card"],
         plot_bgcolor = COLOURS["background"],
         font         = dict(color=COLOURS["text"]),
-        margin       = dict(l=50, r=20, t=50, b=40),
+        margin       = dict(l=50, r=20, t=80, b=40),
         showlegend   = False,
         barmode      = "group",
     )
     fig.update_xaxes(gridcolor=COLOURS["border"])
     fig.update_yaxes(gridcolor=COLOURS["border"])
     return fig
-
+    
 
 def build_heatmap(scenario):
+
     """
     Build PRB allocation heatmap showing how each scheduler
     distributes resources across slices.
     """
+
     # Representative PRB allocations per scheduler per slice
     # Based on the action maps from design
     allocations = {
@@ -225,24 +222,18 @@ def build_heatmap(scenario):
         "Proportional Fair" : [50, 30, 20],
         "Max-Throughput"    : [80, 10, 10],
     }
-
-    z_values = [allocations[s] for s in SCHEDULERS]
+    z_values  = [allocations[s] for s in SCHEDULERS]
+    text_vals = [[str(v) for v in row] for row in z_values]
 
     fig = go.Figure(data=go.Heatmap(
-        z          = z_values,
-        x          = ["eMBB", "URLLC", "mMTC"],
-        y          = SCHEDULERS,
-        colorscale = "Blues",
-        text       = z_values,
-        texttemplate="%{text} PRBs",
-        showscale  = True,
-        colorbar   = dict(
-            title      = "PRBs",
-            tickfont   = dict(color=COLOURS["text"]),
-            titlefont  = dict(color=COLOURS["text"]),
-        ),
+        z            = z_values,
+        x            = ["eMBB", "URLLC", "mMTC"],
+        y            = SCHEDULERS,
+        colorscale   = "Blues",
+        text         = text_vals,
+        texttemplate = "%{text} PRBs",
+        showscale    = True,
     ))
-
     fig.update_layout(
         title        = f"PRB Allocation Heatmap — {scenario}",
         xaxis_title  = "Network Slice",
@@ -250,8 +241,9 @@ def build_heatmap(scenario):
         paper_bgcolor= COLOURS["card"],
         plot_bgcolor = COLOURS["background"],
         font         = dict(color=COLOURS["text"]),
-        margin       = dict(l=120, r=20, t=50, b=40),
+        margin       = dict(l=120, r=20, t=100, b=40),
     )
+    fig.update_xaxes(tickangle=0)
     return fig
 
 
@@ -307,7 +299,7 @@ def build_summary_table(df, scenario):
     )
 
 
-# ══ DASH APP LAYOUT ════════════════════════════════════════
+# DASH APP LAYOUT
 
 # Load data once at startup
 df_results = load_results()
@@ -319,7 +311,7 @@ app = dash.Dash(
                 "content": "width=device-width, initial-scale=1"}]
 )
 
-# ── Header component ──────────────────────────────────────
+# Header component
 header = html.Div(
     style={
         "backgroundColor": COLOURS["PPO"],
@@ -334,14 +326,14 @@ header = html.Div(
         ),
         html.P(
             "Reinforcement Learning-Based QoS-Aware "
-            "Resource Scheduling | MSc Computer Science",
+            "Resource Scheduling in 5G Network Slicing",
             style={"color": "#AACCEE", "margin": "5px 0 0 0",
                    "fontSize": "13px"}
         ),
     ]
 )
 
-# ── Controls ──────────────────────────────────────────────
+# Controls
 controls = html.Div(
     style={
         "backgroundColor": COLOURS["card"],
@@ -424,7 +416,7 @@ controls = html.Div(
     ]
 )
 
-# ── Main layout ───────────────────────────────────────────
+# Main layout
 app.layout = html.Div(
     style={
         "backgroundColor": COLOURS["background"],
@@ -439,7 +431,7 @@ app.layout = html.Div(
             children=[
                 controls,
 
-                # ── Row 1: Training curve + Comparison chart ──
+                # Row 1: Training curve + Comparison chart 
                 html.Div(
                     style={"display": "grid",
                            "gridTemplateColumns": "1fr 1fr",
@@ -457,7 +449,8 @@ app.layout = html.Div(
                                 dcc.Graph(
                                     id     = "training-curve",
                                     figure = build_training_curve(),
-                                    config = {"displayModeBar": True},
+                                    config = {"displayModeBar": True, "modeBarButtonsToRemove": ["select2d", "lasso2d", "pan2d"],
+                                    "displaylogo": False},
                                     style  = {"height": "350px"},
                                 )
                             ]
@@ -472,7 +465,8 @@ app.layout = html.Div(
                             children=[
                                 dcc.Graph(
                                     id    = "comparison-chart",
-                                    config= {"displayModeBar": True},
+                                    config= {"displayModeBar": True, "modeBarButtonsToRemove": ["select2d", "lasso2d", "pan2d"], 
+                                    "displaylogo": False},
                                     style = {"height": "350px"},
                                 )
                             ]
@@ -480,7 +474,7 @@ app.layout = html.Div(
                     ]
                 ),
 
-                # ── Row 2: Heatmap + Summary table ────────────
+                # Row 2: Heatmap + Summary table 
                 html.Div(
                     style={"display": "grid",
                            "gridTemplateColumns": "1fr 1fr",
@@ -496,7 +490,8 @@ app.layout = html.Div(
                             children=[
                                 dcc.Graph(
                                     id    = "heatmap",
-                                    config= {"displayModeBar": True},
+                                    config= {"displayModeBar": True, "modeBarButtonsToRemove": ["select2d", "lasso2d", "pan2d"], 
+                                    "displaylogo": False},
                                     style = {"height": "350px"},
                                 )
                             ]
@@ -535,7 +530,7 @@ app.layout = html.Div(
 )
 
 
-# ══ CALLBACKS ══════════════════════════════════════════════
+# CALLBACKS
 
 @app.callback(
     Output("comparison-chart", "figure"),
@@ -562,7 +557,7 @@ def update_table(scenario):
     return build_summary_table(df_results, scenario)
 
 
-# ══ ENTRY POINT ════════════════════════════════════════════
+# ENTRY POINT 
 
 if __name__ == "__main__":
     print("\n" + "="*55)
