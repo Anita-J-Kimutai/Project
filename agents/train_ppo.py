@@ -1,221 +1,210 @@
 """
-REINFORCEMENT LEARNING-BASED QUALITY OF SERVICE-AWARE 
+REINFORCEMENT LEARNING-BASED QUALITY OF SERVICE-AWARE
 RESOURCE SCHEDULING IN 5G NETWORK SLICING
 
-Description:
-    Trains a Proximal Policy Optimisation (PPO) agent on
-    the custom FiveGSlicingEnv simulation environment.
-    The agent learns to allocate Physical Resource Blocks
-    (PRBs) across eMBB, URLLC and mMTC slices to jointly
-    optimise QoS and energy efficiency.
+PPO TRAINING SCRIPT
 
-  
+Trains a Proximal Policy Optimisation (PPO) agent on the 
+FiveGSlicingEnv. The agent learns to choose, every 0.5 ms slot,
+how to split PRBs between eMBB, URLLC and mMTC and how many PRBs
+to switch on, balancing QoS against base station energy use.
+
 """
 
+import argparse        # reads options typed on the command line
+import json            # saves the run settings as a readable file
 import os
-import sys
+import time
+
 import numpy as np
 
-# Add project root to path so imports work correctly 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Project imports
-from environment.env_5g import FiveGSlicingEnv
-
-# Stable-Baselines3 imports
 from stable_baselines3 import PPO
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.callbacks import (
-    EvalCallback,
-    CheckpointCallback
-)
+from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.utils import set_random_seed
 
+from environment.env_5g import FiveGSlicingEnv, SCENARIOS
 
-# CONFIGURATION 
+# CONFIGURATION
 
-# Reproducibility
-SEED = 42                    # Fixed seed for reproducibility
+DEFAULT_SEEDS = [42, 43, 44]
+DEFAULT_TIMESTEPS = 500_000      # 500k steps = 2,500 episodes of 200 slots
+DEFAULT_WEIGHTS = [0.4, 0.3, 0.2, 0.1]   # w1 eMBB, w2 URLLC, w3 mMTC, w4 energy
 
-# Training parameters 
+# PPO hyperparameters 
+PPO_PARAMS = {
+    "learning_rate": 3e-4,   # step size for neural network updates
+    "n_steps": 2048,         # slots collected before each policy update
+    "batch_size": 64,        # mini-batch size for gradient updates
+    "n_epochs": 10,          # passes over each batch of experience
+    "gamma": 0.99,           # discount factor: how much future reward counts
+    "gae_lambda": 0.95,      # Generalised Advantage Estimation smoothing
+    "clip_range": 0.2,       # PPO clipping: limits how far one update can move
+    "ent_coef": 0.01,        # Entropy bonus
+                            
+}
 
-TOTAL_TIMESTEPS  = 500_000   # verified sufficient for PPO convergence in comparable small-observation-space Gymnasium environments 
-LEARNING_RATE    = 3e-4      # recommended standard default for PPO
-N_STEPS          = 2048      # Steps per policy update 
-BATCH_SIZE       = 64        # Mini-batch size to balance between gradient accuracy and speed
-N_EPOCHS         = 10        # PPO update epochs per rollout
-GAMMA            = 0.99      # Discount factor
-GAE_LAMBDA       = 0.95      # Generalised Advantage Estimation lambda
-CLIP_RANGE       = 0.2       # PPO clipping parameter
-N_ENVS           = 1         # Number of parallel environments
+EVAL_FREQ = 10_000         # evaluate the agent every 10k training steps
+EVAL_EPISODES = 15         # episodes per evaluation (~5 per scenario)
+CHECKPOINT_FREQ = 100_000  # save a copy of the model every 100k steps
 
-# Evaluation parameters 
-EVAL_FREQ        = 10_000    # Evaluate every N training steps
-EVAL_EPISODES    = 10        # Episodes per evaluation
+RESULTS_ROOT = "./results/v2"   # v1 results in ./results are left untouched
 
-# File paths 
-LOG_DIR          = "./results/ppo_logs/"
-MODEL_SAVE_PATH  = "./results/ppo_final_model"
-BEST_MODEL_PATH  = "./results/ppo_best_model"
-CHECKPOINT_PATH  = "./results/checkpoints/"
+# HELPERS
+def make_env(log_dir, seed, weights):
+    """
+    Create one environment for training or evaluation.
 
-
-# SETUP 
-
-def create_dirs():
-    """Create output directories if they do not exist."""
-    for path in [LOG_DIR, BEST_MODEL_PATH, CHECKPOINT_PATH]:
-        os.makedirs(path, exist_ok=True)
-    print("✅ Output directories ready.")
-
-
-def make_env(seed=0):
-    """Create and wrap a single environment instance."""
-    env = FiveGSlicingEnv()
-    env = Monitor(env, LOG_DIR)   # Logs episode rewards and lengths
+    scenario=None means a random scenario is chosen at every reset.
+    Monitor records each episode's total reward and length into
+    monitor.csv, which is used later to plot the learning curve.
+    """
+    env = FiveGSlicingEnv(scenario=None, weights=tuple(weights))
+    env = Monitor(env, log_dir)
     env.reset(seed=seed)
     return env
 
 
-# TRAINING 
-
-def train():
+def quick_evaluation(model, weights, seed, n_episodes=10):
     """
-    Main training function
-    Creates environment, instantiates PPO agent,
-    configures callbacks, and runs training
+    runs agent on EACH scenario separately 
+
+    deterministic=True means the agent always picks its single best
+    action (no random exploration), which is how it would be deployed.
     """
-    print("\n" + "="*55)
-    print("  5G RL SCHEDULER — PPO TRAINING")
-    print("="*55)
-    print(f"  Total timesteps : {TOTAL_TIMESTEPS:,}")
-    print(f"  Learning rate   : {LEARNING_RATE}")
-    print(f"  Batch size      : {BATCH_SIZE}")
-    print(f"  Random seed     : {SEED}")
-    print("="*55 + "\n")
+    print(f"\n  {'Scenario':<16}{'Reward':>9}{'eMBB sat':>10}"
+          f"{'URLLC viol':>12}{'mMTC loss':>11}{'Power W':>9}{'PRBs':>7}")
 
-    # Create output directories 
-    create_dirs()
+    for scenario in SCENARIOS:
+        env = FiveGSlicingEnv(scenario=scenario, weights=tuple(weights))
+        rewards, sat, viol, loss, power, prbs = [], [], [], [], [], []
 
-    # Create training environment 
-    print("Creating training environment...")
-    train_env = make_env(seed=SEED)
-    print("✅ Training environment created.\n")
+        for ep in range(n_episodes):
+            # 10_000 offset: evaluation traffic differs from training traffic
+            obs, _ = env.reset(seed=seed + 10_000 + ep)
+            done, ep_reward = False, 0.0
+            while not done:
+                action, _ = model.predict(obs, deterministic=True)
+                obs, r, term, trunc, info = env.step(action)
+                ep_reward += r
+                sat.append(info["embb_satisfaction"])
+                viol.append(info["urllc_violation"])
+                loss.append(info["packet_loss"])
+                power.append(info["power_watts"])
+                prbs.append(info["active_prbs"])
+                done = term or trunc
+            rewards.append(ep_reward)
 
-    # Create evaluation environment 
-    
-    print("Creating evaluation environment...")
-    eval_env = make_env(seed=SEED + 1)
-    print("✅ Evaluation environment created.\n")
+        print(f"  {scenario:<16}{np.mean(rewards):9.2f}{np.mean(sat):10.3f}"
+              f"{np.mean(viol):12.3f}{np.mean(loss):11.3f}"
+              f"{np.mean(power):9.1f}{np.mean(prbs):7.1f}")
 
-    # Instantiate PPO agent
-    print("Instantiating PPO agent...")
+# TRAINING
+def train_one_seed(seed, timesteps, weights, tag):
+    #Train a single PPO agent with one random seed
+
+    # Each run gets its own folder
+    run_dir = os.path.join(RESULTS_ROOT, tag, f"seed_{seed}")
+    log_dir = os.path.join(run_dir, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+
+    print("\n" + "=" * 60)
+    print(f"  TRAINING PPO | tag={tag} | seed={seed} | steps={timesteps:,}")
+    print(f"  weights (w1..w4) = {weights}")
+    print("=" * 60)
+
+    # Fix the seed for Python, NumPy and PyTorch together
+    set_random_seed(seed)
+
+    """
+    Separate environments for training and evaluation. Different seeds
+    mean the evaluation traffic is never identical to training traffic.
+    """
+    train_env = make_env(log_dir, seed, weights)
+    eval_env = make_env(os.path.join(log_dir, "eval"), seed + 1, weights)
+
     model = PPO(
-        policy          = "MlpPolicy",   # Fully connected neural network
-        env             = train_env,
-        learning_rate   = LEARNING_RATE,
-        n_steps         = N_STEPS,
-        batch_size      = BATCH_SIZE,
-        n_epochs        = N_EPOCHS,
-        gamma           = GAMMA,
-        gae_lambda      = GAE_LAMBDA,
-        clip_range      = CLIP_RANGE,
-        verbose         = 1,             # Print training progress
-        seed            = SEED,
-        tensorboard_log = LOG_DIR,
+        policy="MlpPolicy",     # fully connected network (2 x 64 units)
+        env=train_env,
+        seed=seed,
+        verbose=0,              # 0 = quiet; the progress bar shows progress
+        device="cpu",           # small networks train faster on CPU than GPU
+        tensorboard_log=log_dir,
+        **PPO_PARAMS,           # "**" unpacks the dictionary into arguments
     )
-    print("✅ PPO agent instantiated.\n")
-    print(f"Policy architecture:\n{model.policy}\n")
 
-    # Configure callbacks 
-    # EvalCallback: evaluates agent periodically and saves best model
+    """
+    EvalCallback: every EVAL_FREQ steps, tests the current policy and
+    saves it as best_model.zip whenever it beats the previous best.
+    """
     eval_callback = EvalCallback(
         eval_env,
-        best_model_save_path = BEST_MODEL_PATH,
-        log_path             = LOG_DIR,
-        eval_freq            = EVAL_FREQ,
-        n_eval_episodes      = EVAL_EPISODES,
-        deterministic        = True,     # Use deterministic policy for eval
-        render               = False,
+        best_model_save_path=run_dir,
+        log_path=log_dir,              # writes evaluations.npz
+        eval_freq=EVAL_FREQ,
+        n_eval_episodes=EVAL_EPISODES,
+        deterministic=True,
+        verbose=0,
     )
 
-    # CheckpointCallback: saves model at regular intervals
+    """
+    CheckpointCallback: saves snapshots so training progress can be
+    examined later (or resumed if the computer crashes).
+    """
     checkpoint_callback = CheckpointCallback(
-        save_freq  = 50_000,
-        save_path  = CHECKPOINT_PATH,
-        name_prefix= "ppo_5g",
+        save_freq=CHECKPOINT_FREQ,
+        save_path=os.path.join(run_dir, "checkpoints"),
+        name_prefix="ppo_5g",
     )
 
-    # Train the agent 
-    print("Starting training...\n")
+    start = time.time()
     model.learn(
-        total_timesteps = TOTAL_TIMESTEPS,
-        callback        = [eval_callback, checkpoint_callback],
-        progress_bar    = True,
+        total_timesteps=timesteps,
+        callback=[eval_callback, checkpoint_callback],
+        progress_bar=True,
     )
+    minutes = (time.time() - start) / 60
 
-    # Save the final trained model 
-    model.save(MODEL_SAVE_PATH)
-    print(f"\n✅ Training complete!")
-    print(f"   Final model saved to : {MODEL_SAVE_PATH}.zip")
-    print(f"   Best model saved to  : {BEST_MODEL_PATH}/best_model.zip")
-    print(f"   Logs saved to        : {LOG_DIR}")
+    model.save(os.path.join(run_dir, "final_model"))
 
-    # Quick evaluation of final model
-    print("\nRunning quick post-training evaluation (10 episodes)...")
-    evaluate_model(model, eval_env, n_episodes=10)
+    # Record every setting used, so the run is fully reproducible
+    config = {
+        "seed": seed,
+        "timesteps": timesteps,
+        "weights": weights,
+        "ppo_params": PPO_PARAMS,
+        "eval_freq": EVAL_FREQ,
+        "eval_episodes": EVAL_EPISODES,
+        "training_minutes": round(minutes, 1),
+        "environment_version": 2,
+    }
+    with open(os.path.join(run_dir, "config.json"), "w") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"\n  Training finished in {minutes:.1f} minutes")
+    print(f"  Saved: {run_dir}/final_model.zip and best_model.zip")
+    print("\n  Quick evaluation of best model (10 episodes per scenario):")
+    best = PPO.load(os.path.join(run_dir, "best_model"), device="cpu")
+    quick_evaluation(best, weights, seed)
 
     train_env.close()
     eval_env.close()
-    return model
 
 
-# EVALUATION 
+def parse_args():
+    #Read command line options (all optional; defaults used otherwise)
+    p = argparse.ArgumentParser(description="Train PPO on the 5G slicing env")
+    p.add_argument("--seeds", type=int, nargs="+", default=DEFAULT_SEEDS)
+    p.add_argument("--timesteps", type=int, default=DEFAULT_TIMESTEPS)
+    p.add_argument("--weights", type=float, nargs=4, default=DEFAULT_WEIGHTS,
+                   metavar=("W1", "W2", "W3", "W4"))
+    p.add_argument("--tag", type=str, default="main",
+                   help="name of the results subfolder, e.g. main or w4_0.3")
+    return p.parse_args()
 
-def evaluate_model(model, env, n_episodes=10):
-    """
-    Evaluate the trained PPO agent over N episodes.
-    Prints mean reward and standard deviation.
-
-    Args:
-        model      : trained PPO model
-        env        : evaluation environment
-        n_episodes : number of evaluation episodes
-    """
-    rewards = []
-
-    for episode in range(n_episodes):
-        obs, _ = env.reset()
-        total_reward = 0
-        done = False
-
-        while not done:
-            # Deterministic action — no random exploration
-            action, _ = model.predict(obs, deterministic=True)
-            action = int(action)
-            obs, reward, terminated, truncated, info = env.step(action)
-            total_reward += reward
-            done = terminated or truncated
-
-        rewards.append(total_reward)
-
-    mean_reward = np.mean(rewards)
-    std_reward  = np.std(rewards)
-
-    print(f"\n{'='*45}")
-    print(f"  POST-TRAINING EVALUATION RESULTS")
-    print(f"{'='*45}")
-    print(f"  Episodes        : {n_episodes}")
-    print(f"  Mean reward     : {mean_reward:.4f}")
-    print(f"  Std deviation   : {std_reward:.4f}")
-    print(f"  Min reward      : {min(rewards):.4f}")
-    print(f"  Max reward      : {max(rewards):.4f}")
-    print(f"{'='*45}\n")
-
-    return mean_reward, std_reward
-
-
-# ENTRY POINT 
 
 if __name__ == "__main__":
-    trained_model = train()
+    args = parse_args()
+    for s in args.seeds:
+        train_one_seed(s, args.timesteps, args.weights, args.tag)
+    print("\nAll training runs complete.")

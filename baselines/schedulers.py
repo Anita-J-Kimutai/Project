@@ -1,346 +1,258 @@
 """
-REINFORCEMENT LEARNING-BASED QUALITY OF SERVICE-AWARE 
+REINFORCEMENT LEARNING-BASED QUALITY OF SERVICE-AWARE
 RESOURCE SCHEDULING IN 5G NETWORK SLICING
 
-Description:
-    Implements three traditional rule-based PRB scheduling
-    algorithms used as baselines for comparison against
-    the PPO reinforcement learning agent.
+BASELINE SCHEDULERS 
 
-    Schedulers implemented:
-        1. Round Robin       — equal rotation, no QoS awareness
-        2. Proportional Fair — weighted by historical throughput
-        3. Max-Throughput    — greedy, highest channel quality
+Rule-based schedulers used as benchmarks for the PPO agent.
 
-    All schedulers follow the same interface:
-        allocate(state) -> action (int, index into action_map)
+    1. Round Robin       - rotates slice priority; ignores traffic
+    2. Proportional Fair - favours the slice whose demand is high
+                           relative to what it has recently received
+    3. Max-Throughput    - greedy: picks the split that serves the most
+                           traffic right now; ignores latency and fairness
+    4. Best Static       - the single fixed allocation with the
+                           highest reward for a scenario, found by
+                           testing all 50 actions. A strong benchmark for PPO 
 
+    Classical schedulers (1-3) are not energy-aware, they always
+    switch on all 100 PRBs. This matches how they work in real
+    networks 
+
+All schedulers share the same interface:
+    allocate(observation) - action index (0-49)
 """
 
 import numpy as np
 
+from environment.env_5g import (
+    FiveGSlicingEnv, ACTION_MAP, SCENARIOS, SPLIT_PATTERNS, action_index
+)
 
-# Exactly as in env_5g.py
-# Each key is an action index (0-9)
-# Each value is [eMBB_prbs, URLLC_prbs, mMTC_prbs]
-ACTION_MAP = {
-    0: [60, 20, 20],   # eMBB-dominant
-    1: [20, 60, 20],   # URLLC-dominant
-    2: [20, 20, 60],   # mMTC-dominant
-    3: [50, 30, 20],   # eMBB-URLLC balanced
-    4: [50, 20, 30],   # eMBB-mMTC balanced
-    5: [20, 50, 30],   # URLLC-mMTC balanced
-    6: [40, 40, 20],   # eMBB-URLLC equal
-    7: [40, 20, 40],   # eMBB-mMTC equal
-    8: [20, 40, 40],   # URLLC-mMTC equal
-    9: [34, 33, 33],   # Equal split
-}
+# Pattern numbers from SPLIT_PATTERNS in env_5g.py, named for readability
+EMBB_DOMINANT, URLLC_DOMINANT, MMTC_DOMINANT = 0, 1, 2
+EQUAL_SPLIT = 9
 
 
-# BASE CLASS 
+def demand_from_observation(obs):
+    """
+    Convert the agent's normalised observation back into an estimate of
+    how many PRBs each slice needs to be used by rule-based schedulers.
 
+    Observation layout (as in env_5g.py):
+        [0] eMBB demand /100   [1] URLLC arrivals /60   [2] mMTC arrivals /150
+        [3] URLLC queue /100   [4] mMTC queue /100      [5] load  [6] time
+
+    URLLC needs 1 PRB per packet; mMTC fits 2 packets per PRB, so its
+    packet count is halved. Queued packets also need serving, so they
+    are added to new arrivals.
+    """
+    embb = obs[0] * 100
+    urllc = obs[1] * 60 + obs[3] * 100
+    mmtc = (obs[2] * 150 + obs[4] * 100) / 2
+    return np.array([embb, urllc, mmtc])
+
+
+# BASE CLASS
 class BaseScheduler:
-    """
-    Abstract base class for all baseline schedulers.
-    All schedulers must implement the allocate() method.
-    """
+    #Parent class: every scheduler must implement allocate()
 
     def __init__(self, name):
-        """
-        Args:
-            name (str): human-readable scheduler name
-        """
         self.name = name
 
-    def allocate(self, state):
-        """
-        Select a PRB allocation action given the current state.
-
-        Args:
-            state (np.array): current normalised observation
-                              [throughput, latency, queue,
-                               energy, timestep]
-
-        Returns:
-            action (int): index into ACTION_MAP (0-9)
-        """
-        raise NotImplementedError(
-            f"{self.name} must implement allocate()"
-        )
+    def allocate(self, obs):
+        raise NotImplementedError(f"{self.name} must implement allocate()")
 
     def reset(self):
-        """Reset any internal state at the start of an episode."""
+        """Clear any memory at the start of an episode (default: none)."""
         pass
 
     def __str__(self):
         return f"Scheduler({self.name})"
 
-
-# ROUND ROBIN 
-
+# 1. ROUND ROBIN
 class RoundRobinScheduler(BaseScheduler):
     """
-    Round Robin Scheduler.
-
-    Rotates through a fixed sequence of balanced allocation
-    strategies at each time step, ensuring equal treatment
-    of all slices regardless of current demand or channel
-    conditions. Provides fairness but no QoS differentiation.
-
-    Reference: Döttling et al. (2009)
+    Gives each slice the dominant share in turn (eMBB -> URLLC -> mMTC
+    -> repeat), regardless of traffic. Fair over time, but blind to
+    demand, so it often gives PRBs to a slice that does not need them
     """
 
     def __init__(self):
         super().__init__("Round Robin")
+        # The three slice-dominant patterns, all using 100 PRBs
+        self.sequence = [action_index(p, 100)
+                         for p in (EMBB_DOMINANT, URLLC_DOMINANT, MMTC_DOMINANT)]
+        self.index = 0
 
-        # Sequence of actions that cycle through balanced
-        # allocations — favouring equal treatment
-        self.action_sequence = [9, 6, 7, 8, 9, 6, 7, 8, 9, 6]
-        self.current_index   = 0
-
-    def allocate(self, state):
-        """
-        Return the next action in the rotation sequence.
-        State is ignored — Round Robin is demand-unaware.
-        """
-        action = self.action_sequence[
-            self.current_index % len(self.action_sequence)
-        ]
-        self.current_index += 1
+    def allocate(self, obs):
+        # "%" (modulo) wraps the index back to 0 after the last item
+        action = self.sequence[self.index % len(self.sequence)]
+        self.index += 1
         return action
 
     def reset(self):
-        #Reset rotation index at episode start
-        self.current_index = 0
+        self.index = 0
 
-
-# PROPORTIONAL FAIR 
-
+# 2. PROPORTIONAL FAIR
 class ProportionalFairScheduler(BaseScheduler):
     """
-    Proportional Fair Scheduler.
+    Classic PF rule:  priority_i = current demand_i / average received_i
 
-    Weights PRB allocation by the ratio of each slice's
-    current channel quality (throughput) to its historical
-    average throughput. Balances efficiency and fairness
-    and is the most widely deployed scheduler in LTE and
-    early 5G systems.
-
+    A slice that has been under-served recently has a small average, so
+    its priority rises and it gets the dominant share next. This
+    balances efficiency (serve high demand) with fairness
+    The average is an exponential moving average (EMA).
     """
 
     def __init__(self, alpha=0.1):
-        """
-        Args:
-            alpha (float): smoothing factor for historical
-                           average update (0 < alpha < 1)
-        """
+        #alpha: EMA smoothing; higher = reacts faster to recent slots
         super().__init__("Proportional Fair")
         self.alpha = alpha
+        self.reset()
 
-        # Historical average throughput per slice
-        # Initialised to 1.0 to avoid division by zero
-        self.avg_throughput = np.array([1.0, 1.0, 1.0])
+    def allocate(self, obs):
+        demand = demand_from_observation(obs)
 
-    def allocate(self, state):
-        """
-        Select action based on PF scoring:
-        score_i = current_rate_i / avg_throughput_i
+        # +1e-6 avoids dividing by zero
+        priority = demand / (self.avg_received + 1e-6)
+        dominant = int(np.argmax(priority))      # 0=eMBB, 1=URLLC, 2=mMTC
+        action = action_index(dominant, 100)     # pattern 0/1/2 at 100 PRBs
 
-        Args:
-            state: [throughput_eMBB, latency_URLLC,
-                    queue_mMTC, energy, timestep]
-
-        Returns:
-            action (int): action index with allocation most
-                          proportional to current demands
-        """
-        # Extract current rates from state
-        # state[0] = eMBB throughput (normalised)
-        # state[1] = URLLC latency  (inverse)
-        # state[2] = mMTC queue     (inverse)
-        current_rates = np.array([
-            state[0],          # eMBB: higher throughput = higher priority
-            1 - state[1],      # URLLC: lower latency = higher priority
-            1 - state[2],      # mMTC: lower queue = higher priority
-        ])
-
-        # Compute PF scores — ratio of current to historical
-        pf_scores = current_rates / (self.avg_throughput + 1e-8)
-
-        # Update historical averages using exponential moving average
-        self.avg_throughput = (
-            (1 - self.alpha) * self.avg_throughput
-            + self.alpha * current_rates
-        )
-
-        # Find the action whose allocation best matches PF scores
-        # The slice with highest PF score gets most PRBs
-        dominant_slice = int(np.argmax(pf_scores))
-
-        """
-        Map dominant slice to corresponding action
-        0=eMBB dominant, 1=URLLC dominant, 2=mMTC dominant
-        Actions 0,1,2 are slice-dominant
-        """
-        action = dominant_slice 
-
+        # Update the EMA with the PRBs each slice actually received
+        received = np.array(ACTION_MAP[action], dtype=float)
+        self.avg_received = (1 - self.alpha) * self.avg_received + self.alpha * received
         return action
 
     def reset(self):
-        """Reset historical averages at episode start."""
-        self.avg_throughput = np.array([1.0, 1.0, 1.0])
+        # Start as if each slice had an equal share (100/3 PRBs)
+        self.avg_received = np.full(3, 100 / 3)
 
 
-# ══ MAX THROUGHPUT ══════════════════════════════════════════
-
+# 3. MAX-THROUGHPUT
 class MaxThroughputScheduler(BaseScheduler):
     """
-    Max-Throughput Scheduler.
-
-    Greedily allocates all PRBs to the slice with the
-    highest instantaneous channel quality (throughput),
-    maximising aggregate network throughput at the expense
-    of fairness and QoS differentiation across slices.
-
+    Greedy: tries all 10 split patterns (at 100 PRBs) and picks the one
+    that would serve the most traffic given last slot's demand.
+    It maximises the total amount served, with no regard for URLLC
+    latency targets or fairness between slices.
     """
-
     def __init__(self):
         super().__init__("Max-Throughput")
+        self.candidates = [action_index(p, 100) for p in range(len(SPLIT_PATTERNS))]
 
-    def allocate(self, state):
-        """
-        Select the action that maximises throughput for
-        the slice currently experiencing the best conditions.
-
-        Args:
-            state: [throughput_eMBB, latency_URLLC,
-                    queue_mMTC, energy, timestep]
-
-        Returns:
-            action (int): dominant-slice action (0, 1, or 2)
-        """
-        # Score each slice by its current performance metric
-        # Higher score = better current conditions
-        slice_scores = np.array([
-            state[0],          # eMBB: higher throughput = better
-            1 - state[1],      # URLLC: lower latency = better
-            1 - state[2],      # mMTC: lower queue = better
-        ])
-
-        # Greedily assign to highest-scoring slice
-        best_slice = int(np.argmax(slice_scores))
-
-        # Actions 0,1,2 = eMBB, URLLC, mMTC dominant respectively
-        action = best_slice
-
-        return action
-
-    def reset(self):
-        #No internal state to reset
-        pass
+    def allocate(self, obs):
+        demand = demand_from_observation(obs)
+        best_action, best_served = self.candidates[0], -1.0
+        for a in self.candidates:
+            alloc = np.array(ACTION_MAP[a])
+            # A slice cannot use more PRBs than it needs: min() per slice
+            served = np.minimum(alloc, demand).sum()
+            if served > best_served:
+                best_action, best_served = a, served
+        return best_action
 
 
-# UTILITY — RUN A SCHEDULER FOR N EPISODES
 
-def run_scheduler(scheduler, env, n_episodes=100, seed=42):
+# 4. BEST STATIC (benchmark)
+
+
+class StaticScheduler(BaseScheduler):
+    #Always plays the same action. Used for the Best Static benchmark
+
+    def __init__(self, action, name=None):
+        super().__init__(name or f"Static (action {action})")
+        self.action = action
+
+    def allocate(self, obs):
+        return self.action
+
+
+def find_best_static(scenario, weights=(0.4, 0.3, 0.2, 0.1),
+                     episodes=5, seed=1000):
     """
-    Run a baseline scheduler for N episodes and collect metrics.
+    Test all 50 actions as fixed allocations on one scenario and return
+    the action with the highest mean episode reward.
 
-    Args:
-        scheduler  : BaseScheduler instance
-        env        : FiveGSlicingEnv instance
-        n_episodes : number of evaluation episodes
-        seed       : random seed for reproducibility
-
-    Returns:
-        dict containing mean metrics across all episodes
+    Uses seeds 1000+ so the search never sees the evaluation traffic
+    (evaluation uses seed 42+); choosing on the test data would be unfair
+    to the other schedulers.
     """
-    all_rewards      = []
-    all_throughputs  = []
-    all_latencies    = []
-    all_packet_losses= []
-    all_energies     = []
+    env = FiveGSlicingEnv(scenario=scenario, weights=weights)
+    best_action, best_reward = None, -np.inf
+    for a in ACTION_MAP:
+        total = 0.0
+        for ep in range(episodes):
+            env.reset(seed=seed + ep)
+            done = False
+            while not done:
+                _, r, term, trunc, _ = env.step(a)
+                total += r
+                done = term or trunc
+        mean_reward = total / episodes
+        if mean_reward > best_reward:
+            best_action, best_reward = a, mean_reward
+    return best_action
 
-    for episode in range(n_episodes):
-        obs, _ = env.reset(seed=seed + episode)
+
+
+# RUN A SCHEDULER (shared by the quick test and evaluate.py)
+def run_scheduler(scheduler, scenario, n_episodes=100, seed=42,
+                  weights=(0.4, 0.3, 0.2, 0.1)):
+    """
+    Run one scheduler on one scenario for n_episodes and return the
+    mean and standard deviation of each metric (per-episode averages)
+    """
+    env = FiveGSlicingEnv(scenario=scenario, weights=weights)
+    metrics = ["embb_throughput", "embb_satisfaction", "urllc_latency",
+               "urllc_violation", "packet_loss", "power_watts", "active_prbs"]
+    per_episode = {m: [] for m in metrics}
+    rewards = []
+
+    for ep in range(n_episodes):
+        obs, _ = env.reset(seed=seed + ep)
         scheduler.reset()
-
-        ep_reward       = 0
-        ep_throughput   = []
-        ep_latency      = []
-        ep_packet_loss  = []
-        ep_energy       = []
-
-        done = False
-
+        slot_values = {m: [] for m in metrics}
+        ep_reward, done = 0.0, False
         while not done:
-            # Scheduler selects action based on current state
             action = scheduler.allocate(obs)
+            obs, r, term, trunc, info = env.step(action)
+            ep_reward += r
+            for m in metrics:
+                slot_values[m].append(info[m])
+            done = term or trunc
+        rewards.append(ep_reward)
+        for m in metrics:
+            per_episode[m].append(np.mean(slot_values[m]))
 
-            # Step environment
-            obs, reward, terminated, truncated, info = env.step(action)
-
-            # Collect metrics from info dict
-            ep_reward      += reward
-            ep_throughput  .append(info.get("embb_throughput", 0))
-            ep_latency     .append(info.get("urllc_latency",   0))
-            ep_packet_loss .append(info.get("packet_loss",     0))
-            ep_energy      .append(info.get("energy",          0))
-
-            done = terminated or truncated
-
-        # Store episode averages
-        all_rewards     .append(ep_reward)
-        all_throughputs .append(np.mean(ep_throughput))
-        all_latencies   .append(np.mean(ep_latency))
-        all_packet_losses.append(np.mean(ep_packet_loss))
-        all_energies    .append(np.mean(ep_energy))
-
-    # Return summary statistics
-    return {
-        "scheduler"     : scheduler.name,
-        "mean_reward"   : np.mean(all_rewards),
-        "std_reward"    : np.std(all_rewards),
-        "mean_throughput": np.mean(all_throughputs),
-        "std_throughput" : np.std(all_throughputs),
-        "mean_latency"  : np.mean(all_latencies),
-        "std_latency"   : np.std(all_latencies),
-        "mean_packet_loss": np.mean(all_packet_losses),
-        "std_packet_loss" : np.std(all_packet_losses),
-        "mean_energy"   : np.mean(all_energies),
-        "std_energy"    : np.std(all_energies),
-    }
-
+    result = {"scheduler": scheduler.name, "scenario": scenario,
+              "mean_reward": np.mean(rewards), "std_reward": np.std(rewards)}
+    for m in metrics:
+        result[f"mean_{m}"] = np.mean(per_episode[m])
+        result[f"std_{m}"] = np.std(per_episode[m])
+    return result
 
 # QUICK TEST
-
 if __name__ == "__main__":
-    """Quick test to verify all schedulers work correctly."""
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__))))
+    print("\n" + "=" * 86)
+    print("  BASELINE SCHEDULER QUICK TEST (10 episodes per scenario)")
+    print("=" * 86)
+    print(f"  {'Scenario':<16}{'Scheduler':<26}{'Reward':>8}{'eMBB sat':>9}"
+          f"{'Viol':>7}{'Loss':>7}{'Power W':>9}")
 
-    from environment.env_5g import FiveGSlicingEnv
+    for scenario in SCENARIOS:
+        best = find_best_static(scenario)
+        schedulers = [
+            RoundRobinScheduler(),
+            ProportionalFairScheduler(),
+            MaxThroughputScheduler(),
+            StaticScheduler(best, f"Best Static {ACTION_MAP[best]}"),
+        ]
+        for s in schedulers:
+            r = run_scheduler(s, scenario, n_episodes=10)
+            print(f"  {scenario:<16}{s.name:<26}{r['mean_reward']:8.2f}"
+                  f"{r['mean_embb_satisfaction']:9.3f}{r['mean_urllc_violation']:7.3f}"
+                  f"{r['mean_packet_loss']:7.3f}{r['mean_power_watts']:9.1f}")
+        print()
 
-    env = FiveGSlicingEnv()
-    schedulers = [
-        RoundRobinScheduler(),
-        ProportionalFairScheduler(),
-        MaxThroughputScheduler(),
-    ]
-
-    print("\n" + "="*50)
-    print("  BASELINE SCHEDULER QUICK TEST (5 episodes)")
-    print("="*50)
-
-    for scheduler in schedulers:
-        results = run_scheduler(scheduler, env, n_episodes=5)
-        print(f"\n{scheduler.name}:")
-        print(f"  Mean reward    : {results['mean_reward']:.4f}")
-        print(f"  Mean throughput: {results['mean_throughput']:.4f}")
-        print(f"  Mean latency   : {results['mean_latency']:.4f}")
-        print(f"  Mean energy    : {results['mean_energy']:.4f}")
-
-    env.close()
-    print("\n✅ All schedulers tested successfully!")
+    print("All schedulers tested successfully.")
